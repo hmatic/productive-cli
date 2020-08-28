@@ -49,7 +49,7 @@ async function createConfig() {
   const organizationMembershipChoices = await mapOrganizationMembershipChoices(organizationMemberships);
 
   const { organizationMembershipId } = await inquirer.prompt([
-    { type: 'list', message: 'Select organization:', name: 'orgId', choices: organizationMembershipChoices },
+    { type: 'list', message: 'Select organization:', name: 'organizationMembershipId', choices: organizationMembershipChoices },
   ]);
 
   return {
