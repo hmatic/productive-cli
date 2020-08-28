@@ -24,25 +24,38 @@ async function findService(dealId, headers) {
   return matchingService.data.map((d) => ({ value: d.id, name: d.attributes.name }));
 }
 
+async function mapOrganizationMembershipChoices(orgMemberships) {
+  return orgMemberships.data.map((orgMembership) => ({
+    value: orgMembership.id,
+    name: `${orgMemberships.included.filter(el => el.type === 'organizations').find(el => el.id === orgMembership.relationships.organization.data.id).attributes.name}`,
+  }));
+}
+
 async function createConfig() {
   const { token } = await inquirer.prompt([
     { type: 'input', message: 'Productive.io token', name: 'token', type: 'password' },
   ]);
 
-  const org = await get('organization_memberships', {
+  const organizationMemberships = await get('organization_memberships', {
     'Content-Type': 'application/vnd.api+json',
     'X-Auth-Token': token,
   });
 
-  if (!org.data) {
+  if (!organizationMemberships.data) {
     console.log('Something went wrong... Check your token!');
     return;
   }
 
+  const organizationMembershipChoices = await mapOrganizationMembershipChoices(organizationMemberships);
+
+  const { organizationMembershipId } = await inquirer.prompt([
+    { type: 'list', message: 'Select organization:', name: 'orgId', choices: organizationMembershipChoices },
+  ]);
+
   return {
     token,
-    orgId: org.data[0].relationships.organization.data.id,
-    userId: org.data[0].relationships.person.data.id,
+    orgId: organizationMemberships.data.find(el => el.id === organizationMembershipId).relationships.organization.data.id,
+    userId: organizationMemberships.data.find(el => el.id === organizationMembershipId).relationships.person.data.id,
     services: [],
   };
 }
